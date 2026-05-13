@@ -27,6 +27,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     bison flex gawk pkg-config \
     curl ca-certificates wget unzip xz-utils file \
     gpg gnupg bash \
+    libcurl4-openssl-dev libz3-dev python3-lldb-14 \
     python3 python3-pip python3-venv python3-dev \
     tcl tcl-dev tk tk-dev \
     zlib1g-dev libffi-dev libfl-dev libssl-dev \
@@ -49,9 +50,6 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN cargo install quaigh
 
-# -----------------------------------------------------------------------------
-# Install Swift using Swiftly
-# -----------------------------------------------------------------------------
 # -----------------------------------------------------------------------------
 # Install Swift using Swiftly
 # -----------------------------------------------------------------------------
