@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     autoconf automake libtool m4 gperf \
     bison flex gawk pkg-config \
     curl ca-certificates wget unzip xz-utils file \
-    gpg gnupg \
+    gpg gnupg bash \
     python3 python3-pip python3-venv python3-dev \
     tcl tcl-dev tk tk-dev \
     zlib1g-dev libffi-dev libfl-dev libssl-dev \
@@ -52,14 +52,20 @@ RUN cargo install quaigh
 # -----------------------------------------------------------------------------
 # Install Swift using Swiftly
 # -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# Install Swift using Swiftly
+# -----------------------------------------------------------------------------
+SHELL ["/bin/bash", "-c"]
+
 RUN cd /tmp \
     && curl -O https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz \
     && tar zxf swiftly-$(uname -m).tar.gz \
     && ./swiftly init --quiet-shell-followup --skip-install --assume-yes \
-    && . "${SWIFTLY_HOME_DIR:-/root/.local/share/swiftly}/env.sh" \
-    && hash -r \
-    && swiftly install 6.3.1 \
-    && swiftly use 6.3.1
+    && source /root/.local/share/swiftly/env.sh \
+    && /root/.local/share/swiftly/bin/swiftly install 6.3.1 \
+    && /root/.local/share/swiftly/bin/swiftly use 6.3.1
+
+SHELL ["/bin/sh", "-c"]
 
 ENV SWIFTLY_HOME_DIR=/root/.local/share/swiftly
 ENV PATH="/root/.local/share/swiftly/bin:/root/.local/share/swiftly/toolchains/6.3.1/usr/bin:${PATH}"
