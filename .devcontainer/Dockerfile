@@ -50,12 +50,12 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 RUN cargo install quaigh
 
 # -----------------------------------------------------------------------------
-# Install Swift using Swiftly, same approach as Swift.org recommendation
+# Install Swift using Swiftly
 # -----------------------------------------------------------------------------
 RUN cd /tmp \
     && curl -O https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz \
     && tar zxf swiftly-$(uname -m).tar.gz \
-    && ./swiftly init --quiet-shell-followup \
+    && ./swiftly init --quiet-shell-followup --skip-install --assume-yes \
     && . "${SWIFTLY_HOME_DIR:-/root/.local/share/swiftly}/env.sh" \
     && hash -r \
     && swiftly install 6.3.1 \
