@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     autoconf automake libtool m4 gperf \
     bison flex gawk pkg-config \
     curl ca-certificates wget unzip xz-utils file \
+    gpg gnupg \
     python3 python3-pip python3-venv python3-dev \
     tcl tcl-dev tk tk-dev \
     zlib1g-dev libffi-dev libfl-dev libssl-dev \
