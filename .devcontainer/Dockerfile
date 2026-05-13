@@ -15,7 +15,9 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} \
     && apt-get update \
     && apt-get install -y --no-install-recommends sudo \
     && echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/${USERNAME} \
-    && chmod 0440 /etc/sudoers.d/${USERNAME}
+    && chmod 0440 /etc/sudoers.d/${USERNAME} \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # -----------------------------------------------------------------------------
 # System dependencies for Fault, Yosys, Icarus, Pyverilog, Quaigh, GUI/noVNC
@@ -26,8 +28,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     autoconf automake libtool m4 gperf \
     bison flex gawk pkg-config \
     curl ca-certificates wget unzip xz-utils file \
-    gpg gnupg bash \
-    libcurl4-openssl-dev libz3-dev python3-lldb-14 \
+    gpg gnupg gnupg2 bash \
+    libcurl4-openssl-dev libz3-dev lldb python3-lldb-14 \
     python3 python3-pip python3-venv python3-dev \
     tcl tcl-dev tk tk-dev \
     zlib1g-dev libffi-dev libfl-dev libssl-dev \
@@ -60,13 +62,14 @@ RUN cd /tmp \
     && tar zxf swiftly-$(uname -m).tar.gz \
     && ./swiftly init --quiet-shell-followup --skip-install --assume-yes \
     && source /root/.local/share/swiftly/env.sh \
-    && /root/.local/share/swiftly/bin/swiftly install 6.3.1 \
-    && /root/.local/share/swiftly/bin/swiftly use 6.3.1
-
-SHELL ["/bin/sh", "-c"]
+    && (/root/.local/share/swiftly/bin/swiftly install 6.3.1 || true) \
+    && /root/.local/share/swiftly/bin/swiftly use 6.3.1 \
+    && source /root/.local/share/swiftly/env.sh \
+    && hash -r \
+    && swift --version
 
 ENV SWIFTLY_HOME_DIR=/root/.local/share/swiftly
-ENV PATH="/root/.local/share/swiftly/bin:/root/.local/share/swiftly/toolchains/6.3.1/usr/bin:${PATH}"
+ENV PATH="/root/.local/share/swiftly/bin:/root/.local/share/swiftly/toolchains/6.3.1/usr/bin:/usr/local/bin:${PATH}"
 
 # -----------------------------------------------------------------------------
 # Python virtual environment + Pyverilog
@@ -85,7 +88,8 @@ RUN git clone https://github.com/steveicarus/iverilog.git /opt/iverilog \
     && sh autoconf.sh \
     && ./configure \
     && make -j"$(nproc)" \
-    && make install
+    && make install \
+    && iverilog -V | head -n 1
 
 # -----------------------------------------------------------------------------
 # Build Yosys from source
@@ -94,17 +98,23 @@ RUN git clone --recurse-submodules https://github.com/YosysHQ/yosys.git /opt/yos
     && cd /opt/yosys \
     && make config-clang \
     && make -j"$(nproc)" \
-    && make install
+    && make install \
+    && yosys -V
 
 # -----------------------------------------------------------------------------
 # Build Fault from source
 # -----------------------------------------------------------------------------
-RUN git clone https://github.com/AUCOHL/Fault.git /opt/Fault \
+RUN source /root/.local/share/swiftly/env.sh \
+    && swift --version \
+    && git clone https://github.com/AUCOHL/Fault.git /opt/Fault \
     && cd /opt/Fault \
     && swift --version | head -n 1 | awk '{print $3}' | cut -d'.' -f1,2 > .swift-version \
     && swift build -c release \
     && cp .build/release/fault /usr/local/bin/fault \
-    && chmod +x /usr/local/bin/fault
+    && chmod +x /usr/local/bin/fault \
+    && fault --help | head -n 5 || true
+
+SHELL ["/bin/sh", "-c"]
 
 # -----------------------------------------------------------------------------
 # Make tools available to vscode user
@@ -115,8 +125,18 @@ RUN cp -r /root/.cargo /home/${USERNAME}/.cargo \
     && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.cargo /home/${USERNAME}/.local /home/${USERNAME}/fault_env
 
 RUN echo 'source /home/vscode/fault_env/bin/activate' >> /home/${USERNAME}/.bashrc \
+    && echo 'export SWIFTLY_HOME_DIR=/home/vscode/.local/share/swiftly' >> /home/${USERNAME}/.bashrc \
     && echo 'export PATH=/home/vscode/.cargo/bin:/home/vscode/.local/share/swiftly/bin:/home/vscode/.local/share/swiftly/toolchains/6.3.1/usr/bin:/usr/local/bin:$PATH' >> /home/${USERNAME}/.bashrc \
     && echo 'export DISPLAY=:1' >> /home/${USERNAME}/.bashrc
+
+# -----------------------------------------------------------------------------
+# Final tool sanity check
+# -----------------------------------------------------------------------------
+RUN /bin/bash -c "source /root/.local/share/swiftly/env.sh && swift --version" \
+    && yosys -V \
+    && iverilog -V | head -n 1 \
+    && quaigh --help | head -n 3 || true \
+    && fault --help | head -n 5 || true
 
 # -----------------------------------------------------------------------------
 # noVNC desktop setup copied from vsd-rtl pattern
