@@ -17,7 +17,8 @@ echo "1. CLOSE all other applications (Browsers, IDEs, Music)."
 echo "2. DO NOT run other processes in parallel."
 echo "3. Ensure your laptop is plugged into power."
 echo "----------------------------------------------------------"
-echo "⚠️ Recommended: Minimum 4GB RAM"
+echo "⚠️ Recommended RAM: Minimum 4GB RAM"
+echo "⚠️ Recommended Space: Minimum 10GB RAM"
 echo ""
 
 # Proceed or Abort
@@ -68,8 +69,46 @@ pip install pyverilog -q
 
 echo "[✔] Python environment ready (Pyverilog installed)"
 
+# Icarus Verilog
+echo -e "\n[3/7] Building Icarus Verilog..."
+if [ ! -d "$HOME/iverilog" ]; then
+    git clone https://github.com/steveicarus/iverilog.git -q "$HOME/iverilog"
+fi
+cd "$HOME/iverilog"
+
+sh autoconf.sh
+./configure
+make -j$(nproc) 2>&1 | tee build_iverilog.log
+sudo make install
+
+echo "✅ Icarus installed"
+
+# Rust and Quaigh
+echo -e "\n[4/7] Installing Rust and Quaigh..."
+if ! command -v cargo &> /dev/null; then
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    source "$HOME/.cargo/env"
+fi
+
+cargo install quaigh -q
+
+echo "✅ Quaigh installed"
+
+# Yosys
+echo -e "\n[5/7] Building Yosys..."
+if [ ! -d "$HOME/yosys" ]; then
+    git clone --recurse-submodules https://github.com/YosysHQ/yosys.git -q "$HOME/yosys"
+fi
+cd "$HOME/yosys"
+
+make config-clang
+make -j$(nproc) 2>&1 | tee build_yosys.log
+sudo make install
+
+echo "✅ Yosys installed"
+
 # Build Fault
-echo -e "\n[3/7] Building Fault from Source..."
+echo -e "\n[6/7] Building Fault from Source..."
 if [ ! -d "$HOME/Fault" ]; then
     git clone https://github.com/AUCOHL/Fault.git "$HOME/Fault" -q
 fi
@@ -86,55 +125,8 @@ chmod +x "$HOME/fault_env/bin/fault"
 
 echo "✅ Fault installed"
 
-# Icarus Verilog
-echo -e "\n[4/7] Building Icarus Verilog..."
-if [ ! -d "$HOME/iverilog" ]; then
-    git clone https://github.com/steveicarus/iverilog.git -q "$HOME/iverilog"
-fi
-cd "$HOME/iverilog"
-
-sh autoconf.sh
-./configure
-make -j$(nproc) 2>&1 | tee build_iverilog.log
-sudo make install
-
-echo "✅ Icarus installed"
-
-# Rust and Quaigh
-echo -e "\n[5/7] Installing Rust and Quaigh..."
-if ! command -v cargo &> /dev/null; then
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    source "$HOME/.cargo/env"
-fi
-
-cargo install quaigh -q
-
-echo "✅ Quaigh installed"
-
-# Yosys
-echo -e "\n[6/7] Building Yosys..."
-if [ ! -d "$HOME/yosys" ]; then
-    git clone --recurse-submodules https://github.com/YosysHQ/yosys.git -q "$HOME/yosys"
-fi
-cd "$HOME/yosys"
-
-make config-clang
-make -j$(nproc) 2>&1 | tee build_yosys.log
-sudo make install
-
-echo "✅ Yosys installed"
-
-# Cleanup
-echo -e "\n[7/7] Cleanup Phase"
-echo "⚠️ This will permanently delete source code (cannot rebuild without re-cloning)."
-read -p "Delete source build folders (~/iverilog, ~/yosys, ~/Fault)? (y/n): " cleanup_confirm
-
-if [[ $cleanup_confirm == [yY] ]]; then
-    rm -rf "$HOME/iverilog" "$HOME/yosys" "$HOME/Fault"
-    echo "🧹 Cleaned up"
-fi
-
 # Final Verification
+echo -e "\n[7/7] Verification Phase"
 echo -e "\n================================================================"
 echo "                ALL SYSTEMS GO! Verification Summary:"
 echo "====================================================================="
