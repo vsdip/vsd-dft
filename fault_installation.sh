@@ -42,18 +42,14 @@ echo "[✔] Dependencies installed"
 # Swift Installation (via Swiftly)
 echo -e "\n[Swift] Checking/Installing Swift..."
 if ! command -v swift &> /dev/null; then
-    curl -fLO https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz || {
-        echo "❌ Failed to download Swiftly"; exit 1;
-    }
+curl -O https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz && \
+tar zxf swiftly-$(uname -m).tar.gz && \
+./swiftly init --quiet-shell-followup && \
+. "${SWIFTLY_HOME_DIR:-$HOME/.local/share/swiftly}/env.sh" && \
+hash -r
 
-    tar zxf swiftly-$(uname -m).tar.gz
-    ./swiftly init --quiet-shell-followup
-
-    source "${SWIFTLY_HOME_DIR:-$HOME/.local/share/swiftly}/env.sh"
-    hash -r
-
-    rm -f swiftly-$(uname -m).tar.gz
-    rm -rf swiftly
+swiftly install 6.3.1
+swiftly use 6.3.1
 
     echo "✅ Swift installed: $(swift --version | head -n 1)"
 else
