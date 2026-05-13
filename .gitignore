@@ -1,0 +1,28 @@
+# DFT generated outputs
+synth/
+cut/
+scan/
+JTAG/
+logs/
+report/
+atpg/
+schematic/
+simulation/
+
+# Simulation outputs
+*.vcd
+*.fst
+*.vvp
+*.out
+a.out
+
+# Tool/build logs
+*.log
+*.jou
+*.rpt
+
+# OS/editor files
+.DS_Store
+.vscode/
+*.swp
+*.swo
