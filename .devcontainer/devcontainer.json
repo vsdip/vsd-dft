@@ -1,0 +1,20 @@
+{
+  "name": "VSD DFT Lab - Fault + Yosys + Icarus + noVNC",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "forwardPorts": [6080],
+  "portsAttributes": {
+    "6080": {
+      "label": "noVNC Desktop",
+      "onAutoForward": "openBrowser"
+    }
+  },
+  "overrideCommand": false,
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "DISPLAY": ":1",
+    "PATH": "/home/vscode/fault_env/bin:/home/vscode/.cargo/bin:/usr/local/bin:${containerEnv:PATH}"
+  },
+  "postCreateCommand": "bash scripts/init_dft_workspace.sh || true && bash scripts/verify_tools.sh || true"
+}
