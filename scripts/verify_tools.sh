@@ -49,6 +49,7 @@ quaigh --help | head -n 3
 
 echo ""
 echo "[9] Fault"
+export LD_LIBRARY_PATH=/home/vscode/.local/share/swiftly/toolchains/6.3.1/usr/lib/swift/linux:${LD_LIBRARY_PATH:-}
 which fault
 fault --help | head -n 20
 
