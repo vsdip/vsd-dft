@@ -20,7 +20,7 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} \
     && rm -rf /var/lib/apt/lists/*
 
 # -----------------------------------------------------------------------------
-# System dependencies for Fault, Yosys, Icarus, Pyverilog, Quaigh, GUI/noVNC
+# System dependencies for Fault, OSS CAD Suite, Pyverilog, Quaigh, GUI/noVNC
 # -----------------------------------------------------------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git make cmake ninja-build \
@@ -34,13 +34,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tcl tcl-dev tk tk-dev \
     zlib1g-dev libffi-dev libfl-dev libssl-dev \
     libreadline-dev libncurses-dev libedit-dev \
-    libsqlite3-dev libxml2-dev uuid-dev \
+    libsqlite3-dev uuid-dev \
     graphviz xdot \
     xfce4 xfce4-terminal \
     x11vnc xvfb novnc websockify supervisor dbus-x11 \
     vim nano less \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# -----------------------------------------------------------------------------
+# Install OSS CAD Suite precompiled package
+# Provides: yosys, abc, iverilog, vvp, nextpnr, openFPGALoader, gtkwave, etc.
+# -----------------------------------------------------------------------------
+RUN mkdir -p /opt \
+    && cd /opt \
+    && wget -q https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2026-05-13/oss-cad-suite-linux-x64-20260513.tgz \
+    && tar -xzf oss-cad-suite-linux-x64-20260513.tgz \
+    && rm oss-cad-suite-linux-x64-20260513.tgz
+
+ENV OSS_CAD_SUITE=/opt/oss-cad-suite
+ENV PATH="/opt/oss-cad-suite/bin:${PATH}"
 
 # -----------------------------------------------------------------------------
 # Install Rust + Quaigh
@@ -69,7 +82,7 @@ RUN cd /tmp \
     && swift --version
 
 ENV SWIFTLY_HOME_DIR=/root/.local/share/swiftly
-ENV PATH="/root/.local/share/swiftly/bin:/root/.local/share/swiftly/toolchains/6.3.1/usr/bin:/usr/local/bin:${PATH}"
+ENV PATH="/root/.local/share/swiftly/bin:/root/.local/share/swiftly/toolchains/6.3.1/usr/bin:/opt/oss-cad-suite/bin:/usr/local/bin:${PATH}"
 
 # -----------------------------------------------------------------------------
 # Python virtual environment + Pyverilog
@@ -79,27 +92,6 @@ RUN python3 -m venv /opt/fault_env \
     && /opt/fault_env/bin/pip install pyverilog
 
 ENV PATH="/opt/fault_env/bin:${PATH}"
-
-# -----------------------------------------------------------------------------
-# Build Icarus Verilog from source
-# -----------------------------------------------------------------------------
-RUN git clone https://github.com/steveicarus/iverilog.git /opt/iverilog \
-    && cd /opt/iverilog \
-    && sh autoconf.sh \
-    && ./configure \
-    && make -j"$(nproc)" \
-    && make install \
-    && iverilog -V | head -n 1
-
-# -----------------------------------------------------------------------------
-# Build Yosys from source
-# -----------------------------------------------------------------------------
-RUN git clone --recurse-submodules https://github.com/YosysHQ/yosys.git /opt/yosys \
-    && cd /opt/yosys \
-    && make config-clang \
-    && make -j"$(nproc)" \
-    && make install \
-    && yosys -V
 
 # -----------------------------------------------------------------------------
 # Build Fault from source
@@ -126,7 +118,8 @@ RUN cp -r /root/.cargo /home/${USERNAME}/.cargo \
 
 RUN echo 'source /home/vscode/fault_env/bin/activate' >> /home/${USERNAME}/.bashrc \
     && echo 'export SWIFTLY_HOME_DIR=/home/vscode/.local/share/swiftly' >> /home/${USERNAME}/.bashrc \
-    && echo 'export PATH=/home/vscode/.cargo/bin:/home/vscode/.local/share/swiftly/bin:/home/vscode/.local/share/swiftly/toolchains/6.3.1/usr/bin:/usr/local/bin:$PATH' >> /home/${USERNAME}/.bashrc \
+    && echo 'export OSS_CAD_SUITE=/opt/oss-cad-suite' >> /home/${USERNAME}/.bashrc \
+    && echo 'export PATH=/home/vscode/fault_env/bin:/home/vscode/.cargo/bin:/home/vscode/.local/share/swiftly/bin:/home/vscode/.local/share/swiftly/toolchains/6.3.1/usr/bin:/opt/oss-cad-suite/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' >> /home/${USERNAME}/.bashrc \
     && echo 'export DISPLAY=:1' >> /home/${USERNAME}/.bashrc
 
 # -----------------------------------------------------------------------------
@@ -134,7 +127,9 @@ RUN echo 'source /home/vscode/fault_env/bin/activate' >> /home/${USERNAME}/.bash
 # -----------------------------------------------------------------------------
 RUN /bin/bash -c "source /root/.local/share/swiftly/env.sh && swift --version" \
     && yosys -V \
+    && abc -h | head -n 2 || true \
     && iverilog -V | head -n 1 \
+    && vvp -V | head -n 1 \
     && quaigh --help | head -n 3 || true \
     && fault --help | head -n 5 || true
 
