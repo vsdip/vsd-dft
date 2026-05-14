@@ -16,6 +16,7 @@
     "DISPLAY": ":1",
     "OSS_CAD_SUITE": "/opt/oss-cad-suite",
     "SWIFTLY_HOME_DIR": "/home/vscode/.local/share/swiftly",
+    "LD_LIBRARY_PATH": "/home/vscode/.local/share/swiftly/toolchains/6.3.1/usr/lib/swift/linux"
     "PATH": "/home/vscode/fault_env/bin:/home/vscode/.cargo/bin:/home/vscode/.local/share/swiftly/bin:/home/vscode/.local/share/swiftly/toolchains/6.3.1/usr/bin:/opt/oss-cad-suite/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
   },
   "postCreateCommand": "bash scripts/init_dft_workspace.sh || true && bash scripts/verify_tools.sh || true"
