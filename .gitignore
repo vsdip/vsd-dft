@@ -16,10 +16,18 @@ simulation/
 *.out
 a.out
 
-# Tool/build logs
+# Reports and logs
 *.log
 *.jou
 *.rpt
+
+# Local tool/build folders
+Fault/
+fault_env/
+.cargo/
+.local/
+.swiftly/
+oss-cad-suite/
 
 # OS/editor files
 .DS_Store
