@@ -1,6 +1,5 @@
 Here is a short `README.md` you can use for the `vsd-dft` repo.
 
-````markdown
 # VSD DFT Lab
 
 This repository provides a cloud-ready Digital Design for Testability (DFT) lab environment using open-source tools.
