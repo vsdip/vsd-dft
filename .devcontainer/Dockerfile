@@ -20,7 +20,7 @@ RUN groupadd --gid ${USER_GID} ${USERNAME} \
     && rm -rf /var/lib/apt/lists/*
 
 # -----------------------------------------------------------------------------
-# System dependencies for Fault, OSS CAD Suite, Pyverilog, Quaigh, GUI/noVNC
+# System dependencies for OSS CAD Suite, Fault, Swift, Pyverilog, Quaigh, noVNC
 # -----------------------------------------------------------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git make cmake ninja-build \
@@ -44,13 +44,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # -----------------------------------------------------------------------------
 # Install OSS CAD Suite precompiled package
-# Provides: yosys, abc, iverilog, vvp, nextpnr, openFPGALoader, gtkwave, etc.
+# Provides: yosys, abc, iverilog, vvp, gtkwave, nextpnr, openFPGALoader, etc.
 # -----------------------------------------------------------------------------
 RUN mkdir -p /opt \
     && cd /opt \
     && wget -q https://github.com/YosysHQ/oss-cad-suite-build/releases/download/2026-05-13/oss-cad-suite-linux-x64-20260513.tgz \
     && tar -xzf oss-cad-suite-linux-x64-20260513.tgz \
-    && rm oss-cad-suite-linux-x64-20260513.tgz
+    && rm -f oss-cad-suite-linux-x64-20260513.tgz
 
 ENV OSS_CAD_SUITE=/opt/oss-cad-suite
 ENV PATH="/opt/oss-cad-suite/bin:${PATH}"
@@ -67,6 +67,8 @@ RUN cargo install quaigh
 
 # -----------------------------------------------------------------------------
 # Install Swift using Swiftly
+# Swiftly may complain about python3-lldb-13 but Swift installs correctly.
+# Therefore, allow swiftly install to return non-zero, then strictly verify Swift.
 # -----------------------------------------------------------------------------
 SHELL ["/bin/bash", "-c"]
 
@@ -95,16 +97,22 @@ ENV PATH="/opt/fault_env/bin:${PATH}"
 
 # -----------------------------------------------------------------------------
 # Build Fault from source
+# This follows the exact working manual flow:
+# clone as root into /opt, chown to vscode, remove .swift-version, build, install.
 # -----------------------------------------------------------------------------
 RUN source /root/.local/share/swiftly/env.sh \
     && swift --version \
-    && git clone https://github.com/AUCOHL/Fault.git /opt/Fault \
+    && rm -rf /opt/Fault \
+    && cd /opt \
+    && git clone https://github.com/AUCOHL/Fault.git \
+    && chown -R ${USERNAME}:${USERNAME} /opt/Fault \
     && cd /opt/Fault \
-    && swift --version | head -n 1 | awk '{print $3}' | cut -d'.' -f1,2 > .swift-version \
+    && rm -f .swift-version \
     && swift build -c release \
     && cp .build/release/fault /usr/local/bin/fault \
     && chmod +x /usr/local/bin/fault \
-    && fault --help | head -n 5 || true
+    && which fault \
+    && fault --help | head -n 20
 
 SHELL ["/bin/sh", "-c"]
 
@@ -123,18 +131,19 @@ RUN echo 'source /home/vscode/fault_env/bin/activate' >> /home/${USERNAME}/.bash
     && echo 'export DISPLAY=:1' >> /home/${USERNAME}/.bashrc
 
 # -----------------------------------------------------------------------------
-# Final tool sanity check
+# Final strict sanity check
+# Do not hide Fault failures.
 # -----------------------------------------------------------------------------
 RUN /bin/bash -c "source /root/.local/share/swiftly/env.sh && swift --version" \
     && yosys -V \
-    && abc -h | head -n 2 || true \
     && iverilog -V | head -n 1 \
     && vvp -V | head -n 1 \
-    && quaigh --help | head -n 3 || true \
-    && fault --help | head -n 5 || true
+    && quaigh --help | head -n 3 \
+    && which fault \
+    && fault --help | head -n 20
 
 # -----------------------------------------------------------------------------
-# noVNC desktop setup copied from vsd-rtl pattern
+# noVNC desktop setup
 # -----------------------------------------------------------------------------
 COPY supervisord.conf /etc/supervisor/conf.d/vnc.conf
 
