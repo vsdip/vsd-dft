@@ -85,6 +85,7 @@ RUN cd /tmp \
 
 ENV SWIFTLY_HOME_DIR=/root/.local/share/swiftly
 ENV PATH="/root/.local/share/swiftly/bin:/root/.local/share/swiftly/toolchains/6.3.1/usr/bin:/opt/oss-cad-suite/bin:/usr/local/bin:${PATH}"
+ENV LD_LIBRARY_PATH="/root/.local/share/swiftly/toolchains/6.3.1/usr/lib/swift/linux:${LD_LIBRARY_PATH}"
 
 # -----------------------------------------------------------------------------
 # Python virtual environment + Pyverilog
@@ -125,11 +126,13 @@ RUN cp -r /root/.cargo /home/${USERNAME}/.cargo \
     && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.cargo /home/${USERNAME}/.local /home/${USERNAME}/fault_env
 
 RUN echo 'source /home/vscode/fault_env/bin/activate' >> /home/${USERNAME}/.bashrc \
+    && echo 'source /home/vscode/.local/share/swiftly/env.sh' >> /home/${USERNAME}/.bashrc \
     && echo 'export SWIFTLY_HOME_DIR=/home/vscode/.local/share/swiftly' >> /home/${USERNAME}/.bashrc \
     && echo 'export OSS_CAD_SUITE=/opt/oss-cad-suite' >> /home/${USERNAME}/.bashrc \
     && echo 'export PATH=/home/vscode/fault_env/bin:/home/vscode/.cargo/bin:/home/vscode/.local/share/swiftly/bin:/home/vscode/.local/share/swiftly/toolchains/6.3.1/usr/bin:/opt/oss-cad-suite/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' >> /home/${USERNAME}/.bashrc \
+    && echo 'export LD_LIBRARY_PATH=/home/vscode/.local/share/swiftly/toolchains/6.3.1/usr/lib/swift/linux:${LD_LIBRARY_PATH:-}' >> /home/${USERNAME}/.bashrc \
     && echo 'export DISPLAY=:1' >> /home/${USERNAME}/.bashrc
-
+    
 # -----------------------------------------------------------------------------
 # Final strict sanity check
 # Do not hide Fault failures.
