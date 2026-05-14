@@ -109,5 +109,3 @@ Generated outputs should not be committed to the repository. Lab output folders 
 
 This repo is intended for students and engineers who want to learn practical DFT concepts using an open-source cloud-based setup without installing tools locally.
 
-```
-```
